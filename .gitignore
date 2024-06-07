@@ -8,3 +8,5 @@ Assets/CesiumForUnity/
 .vsconfig
 *.sln
 *.csproj
+
+Packages/com.cesium.unity/native~/build/

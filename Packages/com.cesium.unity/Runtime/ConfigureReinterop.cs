@@ -63,6 +63,7 @@ namespace CesiumForUnity
 
             Vector4 v = new Vector4(1.0f, 0.0f, 1.0f, 0.0f);
 
+            
             t.position = new Vector3();
             Vector3 p = t.position;
             float x = p.x;
