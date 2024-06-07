@@ -1,110 +1,121 @@
-[![Cesium for Unity Logo](Images~/Cesium_for_Unity-Logo-WhiteBGH.jpg)](https://cesium.com/)
 
-# Cesium for Unity Samples
+# Trying to make Cesium for Unity to work for Apple Vision Pro 
+Below is the log of the detailed steps we have followed 
+### 1. Cloned cesium-unity-samples to start clean
+### 2. Following [Cesium-Unity Developer Setup Guide](https://github.com/CesiumGS/cesium-unity/blob/main/Documentation~/developer-setup.md)
+### 3. Following are the versions of Prerequisites libs
 
-The Cesium for Unity Samples is a starter project to learn and explore the [Cesium for Unity](https://cesium.com/platform/cesium-for-unity?utm_source=github&utm_medium=github&utm_campaign=unity) plugin.
+- cmake version 3.29.3
+- dotnet version 6.0.423
+- NASM version 2.16.03 compiled on Apr 17 2024
+- JetBrains Rider 2024.1.1
+- unity 2022.3.27f1 version with vision-pro setting
+- Developing on Macbook pro M3 Max
 
-The scenes in this project will walk you through the plugin's features and demonstrate global-scale content, applications, and experiences in Unity 3D.
+### 3.1 Remove cesium plugin from package manager
 
-The source code for Cesium for Unity itself may be found in the [cesium-unity](https://github.com/CesiumGS/cesium-unity) repo.
+### 3.2 Remove Cesium from scoped registry
 
-![Aerometrex Photogrammetry of San Francisco in Cesium for Unity](Images~/san_francisco.jpg)
-*<p align="center">Photogrammetry of San Francisco, California visualized in Unity, using Cesium for Unity.<br>Open the <b>03_CesiumSanFrancisco</b> scene in Cesium for Unity Samples to experience it yourself!</p>*
+### 4. Cloned the cesium-unity (plugin) project to com.cesium.unity folder:
+```
+cd cesium-unity-samples/Packages
+git clone --recurse-submodules git@github.com:CesiumGS/cesium-unity.git com.cesium.unity
+```
 
-### :rocket: Get Started
+### 5. Ran this command
+```dotnet publish Reinterop~ -o .```
 
-1. **[Download Cesium for Unity Samples](https://github.com/CesiumGS/cesium-unity-samples/releases/latest)**.
-2. Extract the `.zip` file into a suitable location on your computer.
-3. If you have [Unity Hub](https://unity.com/unity-hub) installed, click the "Open" button under the "Projects" tab. Otherwise, open the Unity Editor directly and select "Open Project". Then, point it to the extracted directory. Unity will load the project and also download Cesium for Unity using the Package Manager.
-4. In the Asset Browser, select and load `Assets -> Scenes -> 01_CesiumWorld`. You can also select other scenes as you browse and explore the samples.
+### 6. Opened the project in unity editor 
+***it is able to play and we did see the following error as mentioned in the developer setup guide***
+DllNotFoundException: CesiumForUnityNative assembly:<unknown assembly> type:<unknown type> member:(null)
+NotImplementedException: The native implementation is missing so OnValidate cannot be invoked.
 
-Have questions? Ask them on the [community forum](https://community.cesium.com).
+did the folllowing steps to remediate 
 
-## :mountain: Level Descriptions
+```
+cd cesium-unity-samples/Packages/com.cesium.unity/native~
+cmake -B build -S . -DCMAKE_BUILD_TYPE=Debug
+cmake --build build -j14 --target install --config Debug
+```
 
-### :one: Level 1 - Cesium World
+### 7. Installed the following dependencies:
+- com.unity.polyspatial 1.2.3
+- com.unity.polyspatial.visionos 1.2.3
+- com.unity.polyspatial.xr 1.2.3
 
-The sample levels begin with a scene in San Francisco. You'll see [Cesium World Terrain](https://cesium.com/platform/cesium-ion/content/cesium-world-terrain/) and [Cesium OSM Buildings](https://cesium.com/platform/cesium-ion/content/cesium-osm-buildings/) in this scene. This level is designed to familiarize you with the core Cesium game objects and components, like Cesium World Terrain and Cesium Georeference.
+### 8. While making the build, got the following error:
+```
+Win32Exception: ApplicationName='cmake', CommandLine='-B /Users/ashishgupta/dev/repos/cesium-unity-samples/Packages/com.cesium.unity/native~/build-VisionOS -S /Users/ashishgupta/dev/repos/cesium-unity-samples/Packages/com.cesium.unity/native~ -DEDITOR=false -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_INSTALL_PREFIX="/Users/ashishgupta/dev/repos/cesium-unity-samples/Packages/com.cesium.unity/Plugins/VisionOS" -DREINTEROP_GENERATED_DIRECTORY=generated-VisionOS', CurrentDirectory='/Users/ashishgupta/dev/repos/cesium-unity-samples/Packages/com.cesium.unity/native~', Native error= Cannot find the specified file 
+```
 
-Be sure to sign into your Cesium ion account using the Cesium button in the toolbar.
+Followed https://community.cesium.com/t/cmake-not-found-cesium-unity-for-visionos/32634/2?u=ashish-analog and made the changes in the following files:
+CompileCesiumForUnityNative.cs
+Cmake.cs
 
-### :two: Level 2 - Melbourne Photogrammetry
+### 9. In the next step, Got error while building 
+in /cesium-unity-abp/Packages/com.cesium.unity/native~/build-VisionOS/build.log File
+```
+/Users/ashishgupta/dev/repos/cesium-unity-samples/Packages/com.cesium.unity/native~/Shared/src/UnityAssetAccessor.cpp:8:10: fatal error: 'DotNet/CesiumForUnity/Helpers.h' file not found
+#include <DotNet/CesiumForUnity/Helpers.h>
+         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated.
+1 error generated.
+make[2]: *** [Runtime/CMakeFiles/CesiumForUnityNative-Runtime.dir/src/CesiumCreditSystemImpl.cpp.o] Error 1
+make[2]: *** [Runtime/CMakeFiles/CesiumForUnityNative-Runtime.dir/__/Shared/src/UnityAssetAccessor.cpp.o] Error 1
+In file included from /Users/ashishgupta/dev/repos/cesium-unity-samples/Packages/com.cesium.unity/native~/Runtime/src/CesiumFeatureImpl.cpp:1:
+/Users/ashishgupta/dev/repos/cesium-unity-samples/Packages/com.cesium.unity/native~/Runtime/src/CesiumFeatureImpl.h:5:10: fatal error: 'DotNet/CesiumForUnity/CesiumMetadataValue.h' file not found
+#include <DotNet/CesiumForUnity/CesiumMetadataValue.h>
+         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated.
+make[2]: *** [Runtime/CMakeFiles/CesiumForUnityNative-Runtime.dir/src/CesiumFeatureImpl.cpp.o] Error 1
+/Users/ashishgupta/dev/repos/cesium-unity-samples/Packages/com.cesium.unity/native~/Runtime/src/CesiumFeatureIdAttributeImpl.cpp:3:10: fatal error: 'DotNet/CesiumForUnity/CesiumFeatureIdAttribute.h' file not found
+#include <DotNet/CesiumForUnity/CesiumFeatureIdAttribute.h>
+         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated.
+make[2]: *** [Runtime/CMakeFiles/CesiumForUnityNative-Runtime.dir/src/CesiumFeatureIdAttributeImpl.cpp.o] Error 1
+/Users/ashishgupta/dev/repos/cesium-unity-samples/Packages/com.cesium.unity/native~/Runtime/src/CesiumFeatureIdTextureImpl.cpp:6:10: fatal error: 'DotNet/CesiumForUnity/CesiumFeatureIdTexture.h' file not found
+#include <DotNet/CesiumForUnity/CesiumFeatureIdTexture.h>
+         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated.
+make[2]: *** [Runtime/CMakeFiles/CesiumForUnityNative-Runtime.dir/src/CesiumFeatureIdTextureImpl.cpp.o] Error 1
+In file included from /Users/ashishgupta/dev/repos/cesium-unity-samples/Packages/com.cesium.unity/native~/Runtime/src/CesiumIonServerHelper.cpp:3:
+/Users/ashishgupta/dev/repos/cesium-unity-samples/Packages/com.cesium.unity/native~/Runtime/src/UnityTilesetExternals.h:5:10: fatal error: 'DotNet/CesiumForUnity/Cesium3DTileset.h' file not found
+#include <DotNet/CesiumForUnity/Cesium3DTileset.h>
+         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated.
+make[2]: *** [Runtime/CMakeFiles/CesiumForUnityNative-Runtime.dir/src/CesiumIonServerHelper.cpp.o] Error 1
+/Users/ashishgupta/dev/repos/cesium-unity-samples/Packages/com.cesium.unity/native~/Runtime/src/Cesium3DTileImpl.cpp:7:10: fatal error: 'DotNet/Unity/Mathematics/double4x4.h' file not found
+#include <DotNet/Unity/Mathematics/double4x4.h>
+         ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+1 error generated.
+make[2]: *** [Runtime/CMakeFiles/CesiumForUnityNative-Runtime.dir/src/Cesium3DTileImpl.cpp.o] Error 1
+make[1]: *** [Runtime/CMakeFiles/CesiumForUnityNative-Runtime.dir/all] Error 2
 
-In this scene, explore high-resolution photogrammetry data of Melbourne. This data is streamed from Cesium ion with the 3D Tiles format, a spatial index for streaming massive 3D content over the web. 3D Tiles makes it possible to stream hundreds of gigabytes of data over the web using hierarchical level of detail, spatial subdivision, and runtime optimizations.
+```
 
-See how this scene was created with the [Adding Datasets tutorial](https://cesium.com/learn/unity/unity-datasets/).
+### 10. make the following changes in Editor/ConfigureReinterop.cs 
 
-### :three: Level 3 - San Francisco Photogrammetry with a Unity Character Controller
+```
+#elif UNITY_VISIONOS
+        public const string CppOutputPath = "../native~/Editor/generated-visionOS";
+```
 
-In this scene, explore even more high-resolution photogrammetry data of San Francisco using a third-person character controller. Whereas Melbourne allowed you to freely fly around and explore, in this scene you'll walk right up to the real-world data. When streaming content through Cesium for Unity, physics and gravity will continue to work as expected with your character controllers.
+and following changes in Runtime/ConfigureReinterop.cs file
+```
+#elif UNITY_VISIONOS
+        public const string CppOutputPath = "../native~/Runtime/generated-visionOS";
 
-Grab some cool screenshots to share with us as you explore and customize the scenes.
+```
 
-![Photogrammetry of the Ferry Building in San Francisco, CA captured by [Aerometrex](https://aerometrex.com.au/) and visualized in Unity 3D using Cesium for Unity.](Images~/ferry_building.jpg)
-*<p align="center">Photogrammetry of the Ferry Building in San Francisco, CA captured by [Aerometrex](https://aerometrex.com.au/).<br>Open <b>03_CesiumSanFrancisco</b> in the Cesium for Unity Samples to walk around the dataset.</p>*
+### 11. After the above steps, dotnet/xxxx/xxx.h errors got resolved
+Got the following error after xcode build:
 
-### :four: Level 4 - Using Subscenes to Explore the World
+```
 
-With Cesium for Unity, you can build experiences in different locations around the world, without even changing scenes. In this level, we've added a few locations around the world that you can explore. Enter play mode and jump between locations by pressing the 1-4 keys on your keyboard. These levels are loaded in and georeferenced using the `CesiumSubScene` component.
-
-You can also add your own locations, like your hometown or your favorite vacation spot. Check out the [Sub-scenes tutorial](https://cesium.com/learn/unity/unity-subscenes/) to learn how.
-
-### :five: Level 5 - Metadata
-
-Cesium for Unity enables you to access metadata encoded in your 3D Tiles datasets. In this scene, explore the buildings in New York City and see what information is included in the tileset about each building.
-
-![Metadata of New York City buildings visualized.](Images~/metadata.jpg)
-*<p align="center">Metadata of New York City buildings visualized.<br>Open <b>05_CesiumMetadata</b> in the Cesium for Unity Samples to explore the New York City buildings' metadata.</p>*
-
-### :six: Level 6 - Point Clouds
-
-Cesium for Unity supports rendering point cloud 3D Tilesets in addition to terrain and photogrammetry datasets. In this scene, you can explore several point cloud datasets around the world. Feel free to add your own point clouds as well.
-
-![Point Cloud of Melbourne, Australia visualized using Cesium for Unity.](Images~/melbourne_point_cloud.jpg)
-*<p align="center">Point Cloud of Melbourne, Australia visualized using Cesium for Unity.<br>Open <b>06_CesiumPointClouds</b> in the Cesium for Unity Samples to explore multiple point cloud datasets, including the Melbourne Point Cloud.</p>*
-
-### :seven: Level 7 - Photorealistic 3D Tiles via Google Maps Platform
-
-Explore the world through Photorealistic 3D Tiles streamed via Google Maps Platform. You can learn how to use Photorealistic 3D Tiles in your own 
-projects in the [Photorealistic 3D Tiles from Google Maps Platform tutorial](https://cesium.com/learn/unity/unity-photorealistic-3d-tiles).
-
-![The Googleplex in Mountain View, California visualized with Photorealistic 3D Tiles in Cesium for Unity.](Images~/googleplex.jpeg)
-
-*<p align="center">The Googleplex in Mountain View, California visualized with Photorealistic 3D Tiles in Cesium for Unity.<br>Open <b>07_CesiumGoogleMapsTiles</b> in the Cesium for Unity Samples to explore the world as Photorealistic 3D Tiles.</p>*
-
-### :goggles: :one: VR Level 1 - Denver Photogrammetry
-
-Cesium for Unity supports virtual reality platforms. This level is set up for users with VR headsets to get started quickly. In this scene, explore high-resolution photogrammetry data of Denver, Colorado with VR controller support. To build this for the Oculus Quest 2, open **VR01_CesiumDenver** in the Unity Editor and follow the instructions to build an `APK` file for the headset. These instructions also appear in the UI of the scene itself.
-
-1. Ensure that your Unity Editor has Android build support. If not, follow the instructions [here](https://docs.unity3d.com/Manual/android-sdksetup.html) to set it up.
-2. Go to `File -> Build Settings` and change the platform to Android.
-3. Remove the original sample scene from the scenes list, then click the "Add Open Scenes" button.
-4. Go to `Edit -> Project Settings`. Scroll down to find and click on "XR Plug-in Management".
-5. Go to the "Android" section and check the box next to "OpenXR".
-6. Finally, in the Build Settings window, click "Build and Run" to build an `APK`.
-
-### :goggles: :two: VR Level 2 - Metadata in VR
-
-In this scene, experience a miniature version of New York City using an Oculus Quest 2 and the XR Interaction Toolkit. You can walk around and point at buildings with your controller to view their detailed metadata.
-
-### :goggles: :three: VR Level 3 - New York City Landmarks in Mixed Reality
-
-**This sample requires Unity 2022.3.11f or newer.**
-
-This demo is intended for use with the Magic Leap 2 headset and SDK. In this scene, explore the New York City skyline visualized with Google Photorealistic 3D Tiles. You can visit a set of interesting locations in and around Manhattan, as well as view building metadata while you walk through the streets in Mixed Reality. 
-
-Upon opening the **VR03_CesiumMagicLeap** scene or playing it in the editor, you will be prompted with instructions to configure the project for Magic Leap development. The scene will show you prompts that handle most of the configuration necessary. To build for the Magic Leap, follow these instructions:
-
-1. Open the scene in the editor.
-2. As prompted, [follow the steps in the Magic Leap documentation](https://developer-docs.magicleap.cloud/docs/guides/unity/getting-started/configure-unity-settings/#import-magic-leap-unity-sdk) to install the Magic Leap SDK in the project.
-3. Once installed, press play in the editor. This opens a prompt that will automatically change the project's Build Settings for the Magic Leap. Press "Ok" and wait.
-4. Once completed, check `Edit -> Project Settings -> XR Plug-in Management -> Project Validation` and make sure no issues are present. If there are, resolve them by clicking "Fix" next to each one.
-5. Go to `File -> Build Settings` and click "Build and Run" to create an APK and launch it on the headset.
-
-![New York City landmarks visualized with Photorealistic 3D Tiles in Cesium for Unity, rendered on the Magic Leap 2 headset.](Images~/new_york_magic_leap.jpg)
-
-*<p align="center">New York City landmarks visualized with Photorealistic 3D Tiles in Cesium for Unity, as rendered on the Magic Leap 2 headset.<br>Open <b>VR03_CesiumMagicLeap</b> in the Cesium for Unity Samples to explore the New York City skyline.</p>*
-
-### :green_book:License
-
-[Apache 2.0](http://www.apache.org/licenses/LICENSE-2.0.html). Cesium for Unity Samples is free to use as starter project for both commercial and non-commercial use.
+DllNotFoundException: Unable to load DLL 'CesiumForUnityNative-Runtime'. Tried the load the following dynamic libraries: Unable to load dynamic library '/CesiumForUnityNative-Runtime' because of 'Failed to open the requested dynamic library (0x06000000) dlerror() = dlopen(/CesiumForUnityNative-Runtime, 0x0005): tried: '/CesiumForUnityNative-Runtime' (no such file)
+  at Reinterop.ReinteropInitializer..cctor () [0x00000] in <00000000000000000000000000000000>:0 
+  at CesiumForUnity.Cesium3DTileset.CreateImplementation () [0x00000] in <00000000000000000000000000000000>:0 
+Rethrow as TypeInitializationException: The type initializer for 'Reinterop.ReinteropInitializer' threw an exception.
+  at CesiumForUnity.Cesium3DTileset.CreateImplementation () [0x00000] in <00000000000000000000000000000000>:0 
+ -->
+```
